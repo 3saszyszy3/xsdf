@@ -1,28 +1,43 @@
-name: Ubuntu VDS
+name: Multiple SSH Machines
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      machine_count:
+        description: 'Number of machines to create'
+        required: true
+        default: '10'
+        type: string
 
 jobs:
-  build:
+  setup-machines:
+    name: Setup SSH Machines
     runs-on: ubuntu-latest
+    timeout-minutes: 600  # 10 saat
     steps:
-    - name: VDS Başlat
-      uses: actions/checkout@v2
-    
-    - name: Tmate Kurulumu
-      run: |
-        sudo apt update
-        sudo apt install tmate -y
-        
-    - name: Tmate Oturumu Başlat
-      run: |
-        tmate -S /tmp/tmate.sock new-session -d
-        tmate -S /tmp/tmate.sock wait tmate-ready
-        tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
-        
-    - name: VDS'i Çalışır Tutma
-      run: |
-        while true; do
-          sleep 60
-          tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
-        done
+      - name: Install tmate
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tmate
+
+      - name: Create multiple tmate sessions
+        run: |
+          for i in $(seq 1 ${{ github.event.inputs.machine_count }}); do
+            # Her makine için farklı bir tmate oturumu başlat
+            tmate -S /tmp/tmate$i.sock new-session -d
+            tmate -S /tmp/tmate$i.sock wait tmate-ready
+            
+            # Her makine için farklı bir isim ve renk
+            MACHINE_NAME="Machine-$i"
+            COLOR=$((31 + (i % 7)))  # Farklı renkler için
+            
+            echo -e "\e[${COLOR}m=== $MACHINE_NAME SSH Bağlantı Bilgileri ===\e[0m"
+            tmate -S /tmp/tmate$i.sock display -p '#{tmate_ssh}'
+            echo -e "\e[${COLOR}m=== $MACHINE_NAME Bağlantı Bilgileri Sonu ===\e[0m"
+            echo ""
+          done
+
+      - name: Keep sessions running
+        run: |
+          echo "Tüm oturumlar 10 saat boyunca açık kalacak..."
+          sleep 36000  # 10 saat bekle
