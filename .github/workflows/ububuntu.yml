@@ -1,4 +1,4 @@
-name: 2 Adet Güvenli SSH Makinesi (Debug için)
+name: 2 Adet SSH Makinesi (Debug için)
 
 on:
   workflow_dispatch:
@@ -14,23 +14,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y tmate
 
-      - name: 2 tmate Oturumu Oluştur
+      - name: 2 tmate Oturumu Oluştur ve SSH Kodlarını Göster
         run: |
           echo "!!! DİKKAT: Bu SSH oturumları sadece debugging ve eğitim amaçlıdır. Saldırı, izinsiz erişim veya kötüye kullanım kesinlikle yasaktır. !!!"
-          echo "" > ssh_info.txt
           for i in 1 2; do
             tmate -S /tmp/tmate$i.sock new-session -d
             tmate -S /tmp/tmate$i.sock wait tmate-ready
             MACHINE_NAME="Makine-$i"
             SSH_CMD=$(tmate -S /tmp/tmate$i.sock display -p '#{tmate_ssh}')
-            echo "$MACHINE_NAME: $SSH_CMD" >> ssh_info.txt
+            echo "=== $MACHINE_NAME SSH Bağlantı Bilgisi ==="
+            echo "$SSH_CMD"
+            echo "=== $MACHINE_NAME Bağlantı Bilgisi Sonu ==="
+            echo ""
           done
-
-      - name: SSH Bilgilerini Artifact Olarak Yükle
-        uses: actions/upload-artifact@v3
-        with:
-          name: ssh-info
-          path: ssh_info.txt
 
       - name: Oturumları Açık Tut
         run: |
