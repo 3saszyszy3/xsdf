@@ -1,43 +1,39 @@
-name: Multiple SSH Machines
+name: 2 Adet Güvenli SSH Makinesi (Debug için)
 
 on:
   workflow_dispatch:
-    inputs:
-      machine_count:
-        description: 'Number of machines to create'
-        required: true
-        default: '10'
-        type: string
 
 jobs:
   setup-machines:
-    name: Setup SSH Machines
+    name: 2 SSH Makinesi Kurulumu (Sadece Debug)
     runs-on: ubuntu-latest
-    timeout-minutes: 600  # 10 saat
+    timeout-minutes: 600
     steps:
-      - name: Install tmate
+      - name: tmate Kurulumu
         run: |
           sudo apt-get update
           sudo apt-get install -y tmate
 
-      - name: Create multiple tmate sessions
+      - name: 2 tmate Oturumu Oluştur
         run: |
-          for i in $(seq 1 ${{ github.event.inputs.machine_count }}); do
-            # Her makine için farklı bir tmate oturumu başlat
+          echo "!!! DİKKAT: Bu SSH oturumları sadece debugging ve eğitim amaçlıdır. Saldırı, izinsiz erişim veya kötüye kullanım kesinlikle yasaktır. !!!"
+          echo "" > ssh_info.txt
+          for i in 1 2; do
             tmate -S /tmp/tmate$i.sock new-session -d
             tmate -S /tmp/tmate$i.sock wait tmate-ready
-            
-            # Her makine için farklı bir isim ve renk
-            MACHINE_NAME="Machine-$i"
-            COLOR=$((31 + (i % 7)))  # Farklı renkler için
-            
-            echo -e "\e[${COLOR}m=== $MACHINE_NAME SSH Bağlantı Bilgileri ===\e[0m"
-            tmate -S /tmp/tmate$i.sock display -p '#{tmate_ssh}'
-            echo -e "\e[${COLOR}m=== $MACHINE_NAME Bağlantı Bilgileri Sonu ===\e[0m"
-            echo ""
+            MACHINE_NAME="Makine-$i"
+            SSH_CMD=$(tmate -S /tmp/tmate$i.sock display -p '#{tmate_ssh}')
+            echo "$MACHINE_NAME: $SSH_CMD" >> ssh_info.txt
           done
 
-      - name: Keep sessions running
+      - name: SSH Bilgilerini Artifact Olarak Yükle
+        uses: actions/upload-artifact@v3
+        with:
+          name: ssh-info
+          path: ssh_info.txt
+
+      - name: Oturumları Açık Tut
         run: |
-          echo "Tüm oturumlar 10 saat boyunca açık kalacak..."
-          sleep 36000  # 10 saat bekle
+          echo "2 SSH oturumu 10 saat boyunca debugging için açık kalacak."
+          echo "SSH bağlantı bilgilerini asla başkalarıyla paylaşmayın!"
+          sleep 36000
