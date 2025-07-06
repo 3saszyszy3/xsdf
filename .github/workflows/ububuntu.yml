@@ -1,35 +1,23 @@
-name: 2 Adet SSH Makinesi (Debug için)
+name: programmingwithkumaresan
 
 on:
   workflow_dispatch:
 
 jobs:
-  setup-machines:
-    name: 2 SSH Makinesi Kurulumu (Sadece Debug)
-    runs-on: ubuntu-latest
-    timeout-minutes: 600
+  build:
+    name: Start Building...
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        instance: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
     steps:
-      - name: tmate Kurulumu
+      - name: Downloading & Installing Essentials
         run: |
-          sudo apt-get update
-          sudo apt-get install -y tmate
+          Invoke-WebRequest -Uri "https://www.dropbox.com/scl/fi/qdyd4p9t6xoabl95n5o3g/Downloads.bat?rlkey=snr74vv1vr8k5suujugvrhjtm&dl=1" -OutFile "Downloads.bat"
+          cmd /c Downloads.bat
 
-      - name: 2 tmate Oturumu Oluştur ve SSH Kodlarını Göster
-        run: |
-          echo "!!! DİKKAT: Bu SSH oturumları sadece debugging ve eğitim amaçlıdır. Saldırı, izinsiz erişim veya kötüye kullanım kesinlikle yasaktır. !!!"
-          for i in 1 2; do
-            tmate -S /tmp/tmate$i.sock new-session -d
-            tmate -S /tmp/tmate$i.sock wait tmate-ready
-            MACHINE_NAME="Makine-$i"
-            SSH_CMD=$(tmate -S /tmp/tmate$i.sock display -p '#{tmate_ssh}')
-            echo "=== $MACHINE_NAME SSH Bağlantı Bilgisi ==="
-            echo "$SSH_CMD"
-            echo "=== $MACHINE_NAME Bağlantı Bilgisi Sonu ==="
-            echo ""
-          done
+      - name: Log In To AnyDesk
+        run: cmd /c show.bat
 
-      - name: Oturumları Açık Tut
-        run: |
-          echo "2 SSH oturumu 10 saat boyunca debugging için açık kalacak."
-          echo "SSH bağlantı bilgilerini asla başkalarıyla paylaşmayın!"
-          sleep 36000
+      - name: Time Counter
+        run: python time.py
